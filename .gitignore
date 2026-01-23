@@ -1,0 +1,11 @@
+/.venv
+
+# pyfr stuff
+*.pyfrm 
+*.pyfrs
+*.csv
+*.pvd
+*.vtu
+
+# mesh files
+*.msh

@@ -155,7 +155,7 @@ def main():
     for line in [l_throat_inlet, l_out_int]:
         gmsh.model.mesh.setTransfiniteCurve(line, ny_bottom, "Bump", 0.05)
     for line in [l_inlet_top, l_v1_top, l_v2_top, l_v3, l_v4, l_out_ext]:
-        gmsh.model.mesh.setTransfiniteCurve(line, ny_top, "Progression", 1.005)
+        gmsh.model.mesh.setTransfiniteCurve(line, ny_top, "Progression", 1.01)
 
     # transfinite surfaces
     gmsh.model.mesh.setTransfiniteSurface(s1_b, cornerTags=[p1, p2, p7, p6])

@@ -39,7 +39,7 @@ def main():
     # --- mesh resolution ---
     paper_domain_length = 1.05
     paper_nx_total = 1024
-    dx_constant = paper_domain_length / paper_nx_total # ~0.001025
+    dx_constant = paper_domain_length / paper_nx_total
 
     nx_1 = int(round((x_ramp_start - x_start) / dx_constant))
     nx_2 = int(round((x_kink - x_ramp_start) / dx_constant))

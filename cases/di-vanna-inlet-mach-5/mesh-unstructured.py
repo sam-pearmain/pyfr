@@ -1,4 +1,4 @@
-from math import radians, tan
+from math import radians, tan, sqrt
 
 import gmsh
 
@@ -6,6 +6,26 @@ import gmsh
 def main():
     gmsh.initialize()
     gmsh.model.add("inlet-unstructured")
+
+    # --- physics ---
+    reynolds = 2.3e6
+    mu = 1.0 / reynolds
+    rho = 1.0
+    u_inf = 1.0
+
+    skin_friction_coeff = 0.0592 * (reynolds ** -0.2)
+    tau_w = 0.5 * rho * (u_inf ** 2) * skin_friction_coeff
+    u_tau = sqrt(tau_w / rho)
+
+    target_y_plus = 10.0
+    h_wall = (target_y_plus * mu) / (rho * u_tau)
+    est_dt = 0.1 * h_wall / 1.5
+
+    print("--- Mesh Statistics (Under-resolved) ---")
+    print(f"Target y+: {target_y_plus}")
+    print(f"Calculated First Cell Height: {h_wall:.4e}")
+    print(f"Estimated Max Time Step (dt): ~{est_dt:.4e}")
+    print("----------------------------------------")
 
     # --- geometry ---
     l0 = 150.0  # the inlet's chord
@@ -41,12 +61,12 @@ def main():
 
     # --- points and line ---
 
-    lc_base = 0.5 * scale_factor
-    lc_wall = 0.1 * scale_factor
-    lc_far = lc_base
+    lc_base = 0.1 * scale_factor
+    lc_mid = 0.5 * scale_factor
+    lc_far = 1 * scale_factor
 
     # points
-    p1: int = gmsh.model.geo.addPoint(x_start, 0, 0, lc_base)
+    p1: int = gmsh.model.geo.addPoint(x_start, 0, 0, lc_mid)
     p2: int = gmsh.model.geo.addPoint(x_ramp_start, 0, 0, lc_base)
     p3: int = gmsh.model.geo.addPoint(x_kink, kink_height, 0, lc_base)
     p4: int = gmsh.model.geo.addPoint(x_throat_start, ramp_height, 0, lc_base)
@@ -55,8 +75,8 @@ def main():
     p7: int = gmsh.model.geo.addPoint(x_throat_start, y_throat, 0, lc_base)
     p8: int = gmsh.model.geo.addPoint(x_cowl_tip, intake_height, 0, lc_base)
     p9: int = gmsh.model.geo.addPoint(x_end, intake_height, 0, lc_base)
-    p10: int = gmsh.model.geo.addPoint(x_end, domain_height, 0, lc_base)
-    p11: int = gmsh.model.geo.addPoint(x_start, domain_height, 0, lc_base)
+    p10: int = gmsh.model.geo.addPoint(x_end, domain_height, 0, lc_mid)
+    p11: int = gmsh.model.geo.addPoint(x_start, domain_height, 0, lc_far)
     points: list[int] = [p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11]
 
     # lines
@@ -82,17 +102,17 @@ def main():
 
     # threshold = gmsh.model.mesh.field.add("Threshold")
     # gmsh.model.mesh.field.setNumber(threshold, "InField", distance)
-    # gmsh.model.mesh.field.setNumber(threshold, "SizeMin", lc_wall)
+    # gmsh.model.mesh.field.setNumber(threshold, "SizeMin", h_wall)
     # gmsh.model.mesh.field.setNumber(threshold, "SizeMax", lc_far)
     # gmsh.model.mesh.field.setAsBackgroundMesh(threshold)
 
     bl = gmsh.model.mesh.field.add("BoundaryLayer")
     gmsh.model.mesh.field.setNumbers(bl, "CurvesList", [lines[0]] + walls)
     gmsh.model.mesh.field.setNumbers(bl, "PointsList", [p1, p5, p6, p9])
-    gmsh.model.mesh.field.setNumbers(bl, "FanPointsList", [p7])
-    gmsh.model.mesh.field.setNumber(bl, "Size", 0.02 * scale_factor)
+    gmsh.model.mesh.field.setNumbers(bl, "FanPointsList", [p4, p7, p8])
+    gmsh.model.mesh.field.setNumber(bl, "Size", h_wall)
     gmsh.model.mesh.field.setNumber(bl, "Ratio", 1.1)
-    gmsh.model.mesh.field.setNumber(bl, "Thickness", 1 * scale_factor)
+    gmsh.model.mesh.field.setNumber(bl, "Thickness", 0.5 * scale_factor)
     gmsh.model.mesh.field.setNumber(bl, "Quads", 1)
     gmsh.model.mesh.field.setAsBoundaryLayer(bl)
 

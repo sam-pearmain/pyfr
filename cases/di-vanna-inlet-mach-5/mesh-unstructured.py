@@ -27,6 +27,8 @@ def main():
     print(f"Estimated Max Time Step (dt): ~{est_dt:.4e}")
     print("----------------------------------------")
 
+    return
+
     # --- geometry ---
     l0 = 150.0  # the inlet's chord
     scale_factor = 1 / l0  # nondimensional length scale factor

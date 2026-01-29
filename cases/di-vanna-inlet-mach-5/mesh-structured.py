@@ -1,6 +1,7 @@
 import gmsh
 from math import radians, tan
 
+
 def main():
     gmsh.initialize()
     gmsh.model.add("inlet-structured")

@@ -17,7 +17,7 @@ def main():
     tau_w = 0.5 * rho * (u_inf ** 2) * skin_friction_coeff
     u_tau = sqrt(tau_w / rho)
 
-    target_y_plus = 10.0
+    target_y_plus = 5.0
     h_wall = (target_y_plus * mu) / (rho * u_tau)
     est_dt = 0.1 * h_wall / 1.5
 
@@ -26,8 +26,6 @@ def main():
     print(f"Calculated First Cell Height: {h_wall:.4e}")
     print(f"Estimated Max Time Step (dt): ~{est_dt:.4e}")
     print("----------------------------------------")
-
-    return
 
     # --- geometry ---
     l0 = 150.0  # the inlet's chord
@@ -63,9 +61,9 @@ def main():
 
     # --- points and line ---
 
-    lc_base = 0.1 * scale_factor
-    lc_mid = 0.5 * scale_factor
-    lc_far = 1 * scale_factor
+    lc_base = 0.05 * scale_factor
+    lc_mid = 0.2 * scale_factor
+    lc_far = 0.5 * scale_factor
 
     # points
     p1: int = gmsh.model.geo.addPoint(x_start, 0, 0, lc_mid)
@@ -119,12 +117,18 @@ def main():
     gmsh.model.mesh.field.setAsBoundaryLayer(bl)
 
     # physical groups
-    gmsh.model.addPhysicalGroup(2, [surface], name="fluid")
-    gmsh.model.addPhysicalGroup(1, [lines[i] for i in [8, 9, 10]], name="farfield")
-    gmsh.model.addPhysicalGroup(1, [lines[4]], name="outlet")
-    gmsh.model.addPhysicalGroup(1, [lines[0]], name="bottom")
-    gmsh.model.addPhysicalGroup(1, walls, name="wall")
-    
+    fluid = gmsh.model.addPhysicalGroup(2, [surface])
+    farfield = gmsh.model.addPhysicalGroup(1, [lines[i] for i in [8, 9, 10]])
+    outlet = gmsh.model.addPhysicalGroup(1, [lines[4]])
+    bottom = gmsh.model.addPhysicalGroup(1, [lines[0]])
+    wall = gmsh.model.addPhysicalGroup(1, walls)
+
+    gmsh.model.setPhysicalName(2, fluid, "fluid")
+    gmsh.model.setPhysicalName(1, farfield, "farfield")
+    gmsh.model.setPhysicalName(1, outlet, "outlet")
+    gmsh.model.setPhysicalName(1, bottom, "bottom")
+    gmsh.model.setPhysicalName(1, wall, "wall")
+
     gmsh.option.setNumber("Mesh.Algorithm", 6)
 
     gmsh.model.mesh.generate(2)

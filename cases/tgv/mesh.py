@@ -65,7 +65,7 @@ def main():
         2, [s_zmax], [s_zmin], [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, d, 0, 0, 0, 1]
     )
 
-    N = 17
+    N = 129
     for c in gmsh.model.getEntities(1):
         gmsh.model.mesh.setTransfiniteCurve(c[1], N)
 
@@ -76,7 +76,7 @@ def main():
     gmsh.model.mesh.setTransfiniteVolume(box)
 
     gmsh.model.mesh.generate(3)
-    gmsh.write("tgv.msh")
+    gmsh.write(f"tgv-{N-1}-elems.msh")
 
     gmsh.fltk.run()
     gmsh.finalize()

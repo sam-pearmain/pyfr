@@ -21,11 +21,9 @@ def main():
     h_wall = (target_y_plus * mu) / (rho * u_tau)
     est_dt = 0.1 * h_wall / 1.5
 
-    print("--- Mesh Statistics (Under-resolved) ---")
     print(f"Target y+: {target_y_plus}")
     print(f"Calculated First Cell Height: {h_wall:.4e}")
     print(f"Estimated Max Time Step (dt): ~{est_dt:.4e}")
-    print("----------------------------------------")
 
     # --- geometry ---
     l0 = 150.0  # the inlet's chord

@@ -76,7 +76,7 @@ def main():
     gmsh.model.mesh.setTransfiniteVolume(box)
 
     gmsh.model.mesh.generate(3)
-    gmsh.write(f"tgv-{N-1}-elems.msh")
+    gmsh.write(f"{N - 1}-elems-tgv-mesh.msh")
 
     # gmsh.fltk.run()
     gmsh.finalize()

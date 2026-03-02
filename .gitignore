@@ -11,3 +11,7 @@
 
 # mesh files
 *.msh
+
+# slurm stuff
+*.log
+*.err

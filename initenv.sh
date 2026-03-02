@@ -3,6 +3,7 @@
 module purge
 module load gcc
 module load cuda
+module load hdf5
 module load openmpi
 module load scotch
 

@@ -145,7 +145,7 @@ def genmesh(
             0.0,
             0.0,
             angle,
-            numElements=[5 * multiplier],
+            numElements=[10 * multiplier],
             recombine=True,
         )
 

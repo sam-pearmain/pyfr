@@ -38,7 +38,7 @@ def main():
             ]
         else:
             dofs = [
-                random.uniform(0.01, RADIUS * 0.2),
+                random.uniform(0.005, RADIUS * 0.2),
                 random.uniform(0.1, LENGTH * 0.4),
                 random.uniform(0.05, RADIUS - 0.02),
                 random.uniform(LENGTH * 0.5, LENGTH * 0.9),
@@ -152,7 +152,8 @@ def genmesh(
         geom.synchronize()
 
         gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1, name="fluid")
-        gmsh.model.addPhysicalGroup(2, [s1, ext[0][1]], 2, name="planesym")
+        gmsh.model.addPhysicalGroup(2, [s1],        2, name="periodic_0_l")
+        gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3, name="periodic_0_r")
         gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4, name="wall")
         gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5, name="outflow")
         gmsh.model.addPhysicalGroup(2, [ext[4][1]], 6, name="farfield")

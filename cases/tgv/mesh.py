@@ -4,6 +4,11 @@ import gmsh
 
 
 def main():
+    for n_elements in [16, 32, 64, 128, 256]:
+        genmesh(n_elements)
+
+
+def genmesh(n_elems: int):
     gmsh.initialize()
     gmsh.model.add("tgv")
 
@@ -65,9 +70,8 @@ def main():
         2, [s_zmax], [s_zmin], [1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, d, 0, 0, 0, 1]
     )
 
-    N = 513
     for c in gmsh.model.getEntities(1):
-        gmsh.model.mesh.setTransfiniteCurve(c[1], N)
+        gmsh.model.mesh.setTransfiniteCurve(c[1], n_elems + 1)
 
     for s in surfaces:
         gmsh.model.mesh.setTransfiniteSurface(s[1])
@@ -76,7 +80,7 @@ def main():
     gmsh.model.mesh.setTransfiniteVolume(box)
 
     gmsh.model.mesh.generate(3)
-    gmsh.write(f"tgv-{N-1}-elems.msh")
+    gmsh.write(f"{n_elems}-elems-tgv-mesh.msh")
 
     # gmsh.fltk.run()
     gmsh.finalize()

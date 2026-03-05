@@ -56,11 +56,10 @@ def main():
                 "must provide either 3 dofs for a 4-point curve or 5 dofs for a 5-point curve"
             )
 
-        if args.points:
-            if args.points != len(dofs):
-                parser.error(
-                    "number of provided dofs does not match the number of specified control points"
-                )
+        if args.points and args.points != len(dofs):
+            parser.error(
+                "number of provided dofs does not match the number of specified control points"
+            )
         else:
             args.points = 4 if len(dofs) == 3 else 5
 

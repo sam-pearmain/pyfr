@@ -56,7 +56,13 @@ def main():
                 "must provide either 3 dofs for a 4-point curve or 5 dofs for a 5-point curve"
             )
 
-        args.points = 4 if len(dofs) == 3 else 5
+        if args.points:
+            if args.points != len(dofs):
+                parser.error(
+                    "number of provided dofs does not match the number of specified points"
+                )
+        else:
+            args.points = 4 if len(dofs) == 3 else 5
 
     genmesh(
         dofs,

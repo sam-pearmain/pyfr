@@ -59,7 +59,7 @@ def main():
         if args.points:
             if args.points != len(dofs):
                 parser.error(
-                    "number of provided dofs does not match the number of specified points"
+                    "number of provided dofs does not match the number of specified control points"
                 )
         else:
             args.points = 4 if len(dofs) == 3 else 5
@@ -158,7 +158,7 @@ def genmesh(
         geom.synchronize()
 
         gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1, name="fluid")
-        gmsh.model.addPhysicalGroup(2, [s1],        2, name="periodic_0_l")
+        gmsh.model.addPhysicalGroup(2, [s1], 2, name="periodic_0_l")
         gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3, name="periodic_0_r")
         gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4, name="wall")
         gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5, name="outflow")

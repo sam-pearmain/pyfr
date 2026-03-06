@@ -103,7 +103,7 @@ def main():
 
     genmesh(
         dofs,
-        radius, 
+        radius,
         points=args.points,
         no_revolve=args.no_revolve,
         order=args.order,
@@ -115,7 +115,7 @@ def main():
 
 def genmesh(
     dofs: list[float],
-    radius: float, 
+    radius: float,
     points: int = 4,
     no_revolve: bool = False,
     order: int = 1,
@@ -200,7 +200,7 @@ def genmesh(
         geom.synchronize()
 
         gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1, name="fluid")
-        gmsh.model.addPhysicalGroup(2, [s1],        2, name="periodic_0_l")
+        gmsh.model.addPhysicalGroup(2, [s1], 2, name="periodic_0_l")
         gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3, name="periodic_0_r")
         gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4, name="wall")
         gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5, name="outflow")
@@ -216,6 +216,7 @@ def genmesh(
 
     gmsh.finalize()
 
+
 def compute_base_radius(
     parser: argparse.ArgumentParser, fineness_ratio: float, length: float = LENGTH
 ) -> float:
@@ -223,9 +224,6 @@ def compute_base_radius(
         parser.error("fineness ratio cannot be less that 2")
 
     return length / (2 * fineness_ratio)
-
-
-
 
 
 if __name__ == "__main__":

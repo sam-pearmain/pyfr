@@ -5,7 +5,6 @@ import random
 import gmsh
 
 LENGTH = 1.0
-RADIUS = 0.2
 FARFIELD_RADIUS = 0.4
 UPSTREAM_OFFSET = -0.1
 
@@ -66,21 +65,22 @@ def main():
     )
 
     args = parser.parse_args()
+    radius = compute_base_radius(parser, args.fineness, LENGTH)
 
     if args.random:
         if args.points == 4:
             dofs = [
-                random.uniform(0.01, RADIUS * 0.2),
+                random.uniform(0.01, radius * 0.2),
                 random.uniform(0.1, LENGTH * 0.9),
-                random.uniform(0.05, RADIUS - 0.02),
+                random.uniform(0.05, radius - 0.02),
             ]
         else:
             dofs = [
-                random.uniform(0.005, RADIUS * 0.2),
+                random.uniform(0.005, radius * 0.2),
                 random.uniform(0.1, LENGTH * 0.4),
-                random.uniform(0.05, RADIUS - 0.02),
+                random.uniform(0.05, radius - 0.02),
                 random.uniform(LENGTH * 0.5, LENGTH * 0.9),
-                random.uniform(0.1, RADIUS * 0.9),
+                random.uniform(0.1, radius * 0.9),
             ]
     else:
         if not args.dofs:
@@ -103,10 +103,11 @@ def main():
 
     genmesh(
         dofs,
+        radius, 
         points=args.points,
         no_revolve=args.no_revolve,
         order=args.order,
-        fineness=args.fineness,
+        mesh_refinement=args.mesh_refinement,
         write_to_disk=True if args.write_out else False,
         gui=True if args.gui else False,
     )
@@ -114,38 +115,39 @@ def main():
 
 def genmesh(
     dofs: list[float],
+    radius: float, 
     points: int = 4,
     no_revolve: bool = False,
     order: int = 1,
-    fineness: str = "coarse",
+    mesh_refinement: str = "coarse",
     write_to_disk: bool = False,
     gui: bool = False,
 ):
     dof_str = "_".join([f"{d:.1f}" for d in dofs])
-    meshname = f"body_{points}pt_{fineness}_{dof_str}"
+    meshname = f"body_{points}pt_{mesh_refinement}_{dof_str}"
 
     gmsh.initialize()
     gmsh.model.add(meshname)
     geom = gmsh.model.geo
 
-    multiplier = {"coarse": 1, "medium": 2, "fine": 4}[fineness]
-    progression = {"coarse": 0.06, "medium": 0.04, "fine": 0.02}[fineness]
+    multiplier = {"coarse": 1, "medium": 2, "fine": 4}[mesh_refinement]
+    progression = {"coarse": 0.06, "medium": 0.04, "fine": 0.02}[mesh_refinement]
 
     p1 = geom.addPoint(0.0, 0.0, 0.0)
     p2 = geom.addPoint(0.0, dofs[0], 0.0)
 
     if points == 4:
         p3 = geom.addPoint(dofs[1], dofs[2], 0.0)
-        p_end = geom.addPoint(LENGTH, RADIUS, 0.0)
+        p_end = geom.addPoint(LENGTH, radius, 0.0)
         c2 = geom.addBezier([p1, p2, p3, p_end])
     else:
         p3 = geom.addPoint(dofs[1], dofs[2], 0.0)
         p4 = geom.addPoint(dofs[3], dofs[4], 0.0)
-        p_end = geom.addPoint(LENGTH, RADIUS, 0.0)
+        p_end = geom.addPoint(LENGTH, radius, 0.0)
         c2 = geom.addBezier([p1, p2, p3, p4, p_end])
 
     p6 = geom.addPoint(UPSTREAM_OFFSET, 0.0, 0.0)
-    p7 = geom.addPoint(UPSTREAM_OFFSET, RADIUS, 0.0)
+    p7 = geom.addPoint(UPSTREAM_OFFSET, radius, 0.0)
     p8 = geom.addPoint(LENGTH, FARFIELD_RADIUS, 0.0)
 
     c1 = geom.addLine(p6, p1)
@@ -168,6 +170,9 @@ def genmesh(
     geom.mesh.setRecombine(2, s1)
 
     geom.synchronize()
+
+    if order > 1:
+        gmsh.model.mesh.setOrder(order)
 
     if no_revolve:
         gmsh.model.addPhysicalGroup(2, [s1], 1, name="fluid")
@@ -195,16 +200,13 @@ def genmesh(
         geom.synchronize()
 
         gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1, name="fluid")
-        gmsh.model.addPhysicalGroup(2, [s1], 2, name="periodic_0_l")
+        gmsh.model.addPhysicalGroup(2, [s1],        2, name="periodic_0_l")
         gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3, name="periodic_0_r")
         gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4, name="wall")
         gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5, name="outflow")
         gmsh.model.addPhysicalGroup(2, [ext[4][1]], 6, name="farfield")
 
         gmsh.model.mesh.generate(3)
-
-    if order > 1:
-        gmsh.model.mesh.setOrder(order)
 
     if write_to_disk:
         gmsh.write(f"{meshname}.msh")
@@ -213,6 +215,17 @@ def genmesh(
         gmsh.fltk.run()
 
     gmsh.finalize()
+
+def compute_base_radius(
+    parser: argparse.ArgumentParser, fineness_ratio: float, length: float = LENGTH
+) -> float:
+    if fineness_ratio < 2:
+        parser.error("fineness ratio cannot be less that 2")
+
+    return length / (2 * fineness_ratio)
+
+
+
 
 
 if __name__ == "__main__":

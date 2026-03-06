@@ -193,37 +193,40 @@ def genmesh(
         model.setPhysicalName(1, 3, "wall")
         model.setPhysicalName(1, 4, "outflow")
         model.setPhysicalName(1, 5, "farfield")
-        model.mesh.generate(2)
     else:
-        angle = math.pi / 6
-        ext = geom.revolve(
-            [(2, s1)],
-            0.0,
-            0.0,
-            0.0,
-            1.0,
-            0.0,
-            0.0,
-            angle,
-            numElements=[4 * multiplier],
-            recombine=True,
-        )
+        face = [(2, s1)]
+
+        vols, walls, outflows, farfields = [], [], [], [] 
+
+        for i in range(4):
+            ext = geom.revolve(
+                face,
+                0.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
+                math.pi / 2,
+                numElements=[4 * multiplier],
+                recombine=True,
+            )
+            vols.append(ext[1][1])
+            walls.append(ext[2][1])
+            outflows.append(ext[3][1])
+            farfields.append(ext[4][1])
+
+            face = [ext[0]]
 
         geom.synchronize()
+        model.mesh.removeDuplicateNodes()
 
-        model.addPhysicalGroup(3, [ext[1][1]], 1)
-        model.addPhysicalGroup(2, [s1], 2)
-        model.addPhysicalGroup(2, [ext[0][1]], 3)
-        model.addPhysicalGroup(2, [ext[2][1]], 4)
-        model.addPhysicalGroup(2, [ext[3][1]], 5)
-        model.addPhysicalGroup(2, [ext[4][1]], 6)
+        model.addPhysicalGroup(3, vols,      1)
+        model.addPhysicalGroup(2, walls,     2)
+        model.addPhysicalGroup(2, outflows,  3)
+        model.addPhysicalGroup(2, farfields, 4)
         model.setPhysicalName(3, 1, "fluid")
-        model.setPhysicalName(2, 2, "periodic_0_l")
-        model.setPhysicalName(2, 3, "periodic_0_r")
-        model.setPhysicalName(2, 4, "wall")
-        model.setPhysicalName(2, 5, "outflow")
-        model.setPhysicalName(2, 6, "farfield")
-        model.mesh.generate(3)
+        model.setPhysicalName(2, 2, "wall")
+        model.setPhysicalName(2, 3, "outflow")
+        model.setPhysicalName(2, 4, "farfield")
+
+    model.mesh.generate(2 if no_revolve else 3)
 
     if write_to_disk:
         if filename:

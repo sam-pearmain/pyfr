@@ -16,16 +16,17 @@ def main():
         description="a programme for automated generation of hypersonic blunt bodies of revolution",
     )
 
-    parser.add_argument("dofs", nargs="?", default="")
-    parser.add_argument("--random", action="store_true")
-    parser.add_argument("--no-revolve", action="store_true")
-    parser.add_argument("--write-out", action="store_true")
-    parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--points", type=int, choices=[4, 5], default=5)
-    parser.add_argument("--order", type=int, choices=[1, 2], default=1)
+    parser.add_argument("dofs", nargs="?", default="", help="the degrees of freedom at each control point")
+    parser.add_argument("--random", action="store_true", help="whether to generate random values for control point dofs")
+    parser.add_argument("--no-revolve", action="store_true", help="whether to revolve the mesh around its central axis")
+    parser.add_argument("--write-out", action="store_true", help="whether to write the mesh to disk after generation")
+    parser.add_argument("--gui", action="store_true", help="whether to display the gui after mesh generation")
+    parser.add_argument("--points", type=int, choices=[4, 5], default=5, help="the number of bezier curve control points")
+    parser.add_argument("--order", type=int, choices=[1, 2], default=1, help="the mesh element order")
     parser.add_argument(
-        "--fineness", choices=["coarse", "medium", "fine"], default="coarse"
+        "--mesh-refinement", choices=["coarse", "medium", "fine"], default="coarse", help="the level of mesh refinement"
     )
+    parser.add_argument("--fineness", type=float, default=3, help="the geometric fineness ratio (length / base diameter)")
 
     args = parser.parse_args()
 
@@ -157,7 +158,7 @@ def genmesh(
         geom.synchronize()
 
         gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1, name="fluid")
-        gmsh.model.addPhysicalGroup(2, [s1], 2, name="periodic_0_l")
+        gmsh.model.addPhysicalGroup(2, [s1],        2, name="periodic_0_l")
         gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3, name="periodic_0_r")
         gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4, name="wall")
         gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5, name="outflow")

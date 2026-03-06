@@ -70,7 +70,7 @@ def main():
     )
 
     args = parser.parse_args()
-    radius = compute_base_radius(parser, args.fineness, LENGTH)
+    radius = _compute_base_radius(parser, args.fineness, LENGTH)
 
     if args.random:
         if args.points == 4:
@@ -237,7 +237,7 @@ def genmesh(
     gmsh.finalize()
 
 
-def compute_base_radius(
+def _compute_base_radius(
     parser: argparse.ArgumentParser, fineness_ratio: float, length: float = LENGTH
 ) -> float:
     if fineness_ratio < 2:

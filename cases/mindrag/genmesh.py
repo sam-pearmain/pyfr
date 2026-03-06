@@ -129,6 +129,7 @@ def genmesh(
     gmsh.initialize()
     gmsh.model.add(meshname)
     geom = gmsh.model.geo
+    model = gmsh.model
 
     multiplier = {"coarse": 1, "medium": 2, "fine": 4}[mesh_refinement]
     progression = 0.1
@@ -172,21 +173,20 @@ def genmesh(
     geom.synchronize()
 
     if order > 1:
-        gmsh.model.mesh.setOrder(order)
+        model.mesh.setOrder(order)
 
     if no_revolve:
-        gmsh.model.addPhysicalGroup(2, [s1], 1)
-        gmsh.model.addPhysicalGroup(1, [c1], 2)
-        gmsh.model.addPhysicalGroup(1, [c2], 3)
-        gmsh.model.addPhysicalGroup(1, [c3], 4)
-        gmsh.model.addPhysicalGroup(1, [c4], 5)
-        gmsh.model.setPhysicalName(2, 1, "fluid")
-        gmsh.model.setPhysicalName(1, 2, "axissym")
-        gmsh.model.setPhysicalName(1, 3, "wall")
-        gmsh.model.setPhysicalName(1, 4, "outflow")
-        gmsh.model.setPhysicalName(1, 5, "farfield")
-
-        gmsh.model.mesh.generate(2)
+        model.addPhysicalGroup(2, [s1], 1)
+        model.addPhysicalGroup(1, [c1], 2)
+        model.addPhysicalGroup(1, [c2], 3)
+        model.addPhysicalGroup(1, [c3], 4)
+        model.addPhysicalGroup(1, [c4], 5)
+        model.setPhysicalName(2, 1, "fluid")
+        model.setPhysicalName(1, 2, "axissym")
+        model.setPhysicalName(1, 3, "wall")
+        model.setPhysicalName(1, 4, "outflow")
+        model.setPhysicalName(1, 5, "farfield")
+        model.mesh.generate(2)
     else:
         angle = math.pi / 6
         ext = geom.revolve(
@@ -204,20 +204,19 @@ def genmesh(
 
         geom.synchronize()
 
-        gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1)
-        gmsh.model.addPhysicalGroup(2, [s1], 2)
-        gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3)
-        gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4)
-        gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5)
-        gmsh.model.addPhysicalGroup(2, [ext[4][1]], 6)
-        gmsh.model.setPhysicalName(3, 1, "fluid")
-        gmsh.model.setPhysicalName(2, 2, "periodic_0_l")
-        gmsh.model.setPhysicalName(2, 3, "periodic_0_r")
-        gmsh.model.setPhysicalName(2, 4, "wall")
-        gmsh.model.setPhysicalName(2, 5, "outflow")
-        gmsh.model.setPhysicalName(2, 6, "farfield")
-
-        gmsh.model.mesh.generate(3)
+        model.addPhysicalGroup(3, [ext[1][1]], 1)
+        model.addPhysicalGroup(2, [s1], 2)
+        model.addPhysicalGroup(2, [ext[0][1]], 3)
+        model.addPhysicalGroup(2, [ext[2][1]], 4)
+        model.addPhysicalGroup(2, [ext[3][1]], 5)
+        model.addPhysicalGroup(2, [ext[4][1]], 6)
+        model.setPhysicalName(3, 1, "fluid")
+        model.setPhysicalName(2, 2, "periodic_0_l")
+        model.setPhysicalName(2, 3, "periodic_0_r")
+        model.setPhysicalName(2, 4, "wall")
+        model.setPhysicalName(2, 5, "outflow")
+        model.setPhysicalName(2, 6, "farfield")
+        model.mesh.generate(3)
 
     if write_to_disk:
         gmsh.write(f"{meshname}.msh")

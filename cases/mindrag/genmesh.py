@@ -175,11 +175,16 @@ def genmesh(
         gmsh.model.mesh.setOrder(order)
 
     if no_revolve:
-        gmsh.model.addPhysicalGroup(2, [s1], 1, name="fluid")
-        gmsh.model.addPhysicalGroup(1, [c1], 2, name="axissym")
-        gmsh.model.addPhysicalGroup(1, [c2], 3, name="wall")
-        gmsh.model.addPhysicalGroup(1, [c3], 4, name="outflow")
-        gmsh.model.addPhysicalGroup(1, [c4], 5, name="farfield")
+        gmsh.model.addPhysicalGroup(2, [s1], 1)
+        gmsh.model.addPhysicalGroup(1, [c1], 2)
+        gmsh.model.addPhysicalGroup(1, [c2], 3)
+        gmsh.model.addPhysicalGroup(1, [c3], 4)
+        gmsh.model.addPhysicalGroup(1, [c4], 5)
+        gmsh.model.setPhysicalName(2, 1, "fluid")
+        gmsh.model.setPhysicalName(1, 2, "axissym")
+        gmsh.model.setPhysicalName(1, 3, "wall")
+        gmsh.model.setPhysicalName(1, 4, "outflow")
+        gmsh.model.setPhysicalName(1, 5, "farfield")
 
         gmsh.model.mesh.generate(2)
     else:
@@ -199,12 +204,18 @@ def genmesh(
 
         geom.synchronize()
 
-        gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1, name="fluid")
-        gmsh.model.addPhysicalGroup(2, [s1], 2, name="periodic_0_l")
-        gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3, name="periodic_0_r")
-        gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4, name="wall")
-        gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5, name="outflow")
-        gmsh.model.addPhysicalGroup(2, [ext[4][1]], 6, name="farfield")
+        gmsh.model.addPhysicalGroup(3, [ext[1][1]], 1)
+        gmsh.model.addPhysicalGroup(2, [s1], 2)
+        gmsh.model.addPhysicalGroup(2, [ext[0][1]], 3)
+        gmsh.model.addPhysicalGroup(2, [ext[2][1]], 4)
+        gmsh.model.addPhysicalGroup(2, [ext[3][1]], 5)
+        gmsh.model.addPhysicalGroup(2, [ext[4][1]], 6)
+        gmsh.model.setPhysicalName(3, 1, "fluid")
+        gmsh.model.setPhysicalName(2, 2, "periodic_0_l")
+        gmsh.model.setPhysicalName(2, 3, "periodic_0_r")
+        gmsh.model.setPhysicalName(2, 4, "wall")
+        gmsh.model.setPhysicalName(2, 5, "outflow")
+        gmsh.model.setPhysicalName(2, 6, "farfield")
 
         gmsh.model.mesh.generate(3)
 

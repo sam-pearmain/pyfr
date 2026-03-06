@@ -94,7 +94,7 @@ def main():
                 "must provide either 3 dofs for a 4-point curve or 5 dofs for a 5-point curve"
             )
 
-        if args.points and args.points != len(dofs):
+        if args.points and args.points != (len(dofs) + 5) / 2:
             parser.error(
                 "number of provided dofs does not match the number of specified control points"
             )
@@ -131,7 +131,7 @@ def genmesh(
     geom = gmsh.model.geo
 
     multiplier = {"coarse": 1, "medium": 2, "fine": 4}[mesh_refinement]
-    progression = {"coarse": 0.06, "medium": 0.04, "fine": 0.02}[mesh_refinement]
+    progression = 0.1
 
     p1 = geom.addPoint(0.0, 0.0, 0.0)
     p2 = geom.addPoint(0.0, dofs[0], 0.0)
@@ -158,13 +158,13 @@ def genmesh(
     s1 = geom.addPlaneSurface([cl1])
 
     geom.mesh.setTransfiniteCurve(
-        c1, 40 * multiplier, "progression".capitalize(), 1 - progression
+        c1, 20 * multiplier, "progression".capitalize(), 1 - progression
     )
     geom.mesh.setTransfiniteCurve(
-        c3, 40 * multiplier, "progression".capitalize(), 1 + progression
+        c3, 20 * multiplier, "progression".capitalize(), 1 + progression
     )
-    geom.mesh.setTransfiniteCurve(c2, 120 * multiplier)
-    geom.mesh.setTransfiniteCurve(c4, 120 * multiplier)
+    geom.mesh.setTransfiniteCurve(c2, 80 * multiplier)
+    geom.mesh.setTransfiniteCurve(c4, 80 * multiplier)
 
     geom.mesh.setTransfiniteSurface(s1, "left".capitalize(), [p6, p1, p_end, p8])
     geom.mesh.setRecombine(2, s1)
@@ -193,7 +193,7 @@ def genmesh(
             0.0,
             0.0,
             angle,
-            numElements=[10 * multiplier],
+            numElements=[4 * multiplier],
             recombine=True,
         )
 

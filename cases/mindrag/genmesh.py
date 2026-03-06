@@ -34,7 +34,7 @@ def main():
     parser.add_argument(
         "--write-out",
         action="store_true",
-        help="whether to write the mesh to disk after generation",
+        help="writes the mesh to disk, the filename can be specified if required",
     )
     parser.add_argument(
         "--gui",
@@ -62,6 +62,11 @@ def main():
         type=float,
         default=3,
         help="the geometric fineness ratio (length / base diameter)",
+    )
+    parser.add_argument(
+        "--filename", 
+        type=str, 
+        help="the mesh filename"
     )
 
     args = parser.parse_args()
@@ -109,6 +114,7 @@ def main():
         order=args.order,
         mesh_refinement=args.mesh_refinement,
         write_to_disk=True if args.write_out else False,
+        filename=args.filename if args.filename else None, 
         gui=True if args.gui else False,
     )
 
@@ -121,6 +127,7 @@ def genmesh(
     order: int = 1,
     mesh_refinement: str = "coarse",
     write_to_disk: bool = False,
+    filename: str | None = None, 
     gui: bool = False,
 ):
     dof_str = "_".join([f"{d:.1f}" for d in dofs])
@@ -159,13 +166,13 @@ def genmesh(
     s1 = geom.addPlaneSurface([cl1])
 
     geom.mesh.setTransfiniteCurve(
-        c1, 20 * multiplier, "progression".capitalize(), 1 - progression
+        c1, 20 * multiplier + 1, "progression".capitalize(), 1 - progression
     )
     geom.mesh.setTransfiniteCurve(
-        c3, 20 * multiplier, "progression".capitalize(), 1 + progression
+        c3, 20 * multiplier + 1, "progression".capitalize(), 1 + progression
     )
-    geom.mesh.setTransfiniteCurve(c2, 80 * multiplier)
-    geom.mesh.setTransfiniteCurve(c4, 80 * multiplier)
+    geom.mesh.setTransfiniteCurve(c2, 80 * multiplier + 1)
+    geom.mesh.setTransfiniteCurve(c4, 80 * multiplier + 1)
 
     geom.mesh.setTransfiniteSurface(s1, "left".capitalize(), [p6, p1, p_end, p8])
     geom.mesh.setRecombine(2, s1)
@@ -219,7 +226,10 @@ def genmesh(
         model.mesh.generate(3)
 
     if write_to_disk:
-        gmsh.write(f"{meshname}.msh")
+        if filename:
+            gmsh.write(f"{filename}")
+        else:
+            gmsh.write(f"{meshname}.msh")
 
     if gui:
         gmsh.fltk.run()

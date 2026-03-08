@@ -138,7 +138,7 @@ def genmesh(
     geom = gmsh.model.geo
     model = gmsh.model
 
-    multiplier = {"coarse": 1, "medium": 2, "fine": 4}[mesh_refinement]
+    multiplier = {"coarse": 1, "medium": 1.5, "fine": 2}[mesh_refinement]
     progression = 0.1
 
     p1 = geom.addPoint(0.0, 0.0, 0.0)
@@ -156,7 +156,7 @@ def genmesh(
 
     p6 = geom.addPoint(UPSTREAM_OFFSET, 0.0, 0.0)
     p7 = geom.addPoint(UPSTREAM_OFFSET, radius, 0.0)
-    p8 = geom.addPoint(LENGTH, FARFIELD_RADIUS, 0.0)
+    p8 = geom.addPoint(LENGTH - 0.2, FARFIELD_RADIUS, 0.0)
 
     c1 = geom.addLine(p6, p1)
     c3 = geom.addLine(p_end, p8)
@@ -166,13 +166,15 @@ def genmesh(
     s1 = geom.addPlaneSurface([cl1])
 
     geom.mesh.setTransfiniteCurve(
-        c1, 20 * multiplier + 1, "progression".capitalize(), 1 - progression
+        c1, int(20 * multiplier + 1), "progression".capitalize(), 1 - progression
     )
     geom.mesh.setTransfiniteCurve(
-        c3, 20 * multiplier + 1, "progression".capitalize(), 1 + progression
+        c3, int(20 * multiplier + 1), "progression".capitalize(), 1 + progression
     )
-    geom.mesh.setTransfiniteCurve(c2, 80 * multiplier + 1)
-    geom.mesh.setTransfiniteCurve(c4, 80 * multiplier + 1)
+    geom.mesh.setTransfiniteCurve(
+        c2, int(80 * multiplier + 1), "progression".capitalize(), 1.02
+    )
+    geom.mesh.setTransfiniteCurve(c4, int(80 * multiplier + 1))
 
     geom.mesh.setTransfiniteSurface(s1, "left".capitalize(), [p6, p1, p_end, p8])
     geom.mesh.setRecombine(2, s1)
@@ -204,7 +206,7 @@ def genmesh(
                 0.0, 0.0, 0.0,
                 1.0, 0.0, 0.0,
                 math.pi / 2,
-                numElements=[4 * multiplier],
+                numElements=[int(12 * multiplier)],
                 recombine=True,
             )
             vols.append(ext[1][1])

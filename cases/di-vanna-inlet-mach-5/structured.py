@@ -1,12 +1,39 @@
-import gmsh
+import argparse
 from math import radians, tan
+
+import gmsh
 
 geom = gmsh.model.geo
 mesh = gmsh.model.mesh
 
+
 def main():
+    parser = argparse.ArgumentParser()
+    parser.add_argument(
+        "--mesh-refinement",
+        type=str,
+        choices=["coarse", "medium", "fine"],
+        default="coarse",
+    )
+    parser.add_argument("--filename", type=str, default=None)
+    parser.add_argument("--gui", type=bool, default=False)
+
+    args = parser.parse_args()
+
+    multipliers = {"coarse": 1, "medium": 2, "fine": 4}
+    multiplier = multipliers[args.mesh_refinement]
+
+    if not args.filename:
+        filename = f"{args.mesh_refinement}.msh"
+    else:
+        filename = args.filename
+
+    genmesh(multiplier, filename, args.gui)
+
+
+def genmesh(multiplier: int, filename: str | None, gui: bool = False):
     gmsh.initialize()
-    gmsh.model.add("inlet-structured-3d")
+    gmsh.model.add("inlet-structured-3d-coarse")
 
     l0 = 150.0
     scale_factor = 1.0 / l0
@@ -54,10 +81,10 @@ def main():
     nx_wake = int(round((x_end - x_cowl_tip) / dx_constant))
     nx_throat = nx_cowl + nx_wake - 1
 
-    ny_bottom = 95
-    ny_mid = 4
-    ny_top = 30
-    nz_total = 20
+    ny_bottom = 45 * multiplier
+    ny_mid = 4 * multiplier
+    ny_top = 30 * multiplier
+    nz_total = 20 * multiplier
 
     p1 = geom.addPoint(x_start, 0, 0)
     p2 = geom.addPoint(x_ramp_start, 0, 0)
@@ -174,6 +201,50 @@ def main():
 
     for s in all_surfaces:
         mesh.setRecombine(2, s)
+
+    def get_extruded_surf(line_tag):
+        l_bb = gmsh.model.getBoundingBox(1, line_tag)
+        for dim, stag in gmsh.model.getEntities(2):
+            s_bb = gmsh.model.getBoundingBox(dim, stag)
+            if (
+                abs(s_bb[0] - l_bb[0]) < 1e-5
+                and abs(s_bb[1] - l_bb[1]) < 1e-5
+                and abs(s_bb[3] - l_bb[3]) < 1e-5
+                and abs(s_bb[4] - l_bb[4]) < 1e-5
+                and abs(s_bb[2] - 0.0) < 1e-5
+                and abs(s_bb[5] - z_extrude) < 1e-5
+            ):
+                return stag
+        return None
+
+    wall_lines = [l2, l3, l4, l8, l25, l12]
+    farfield_lines = [l17, l22, l26, l13, l14, l15, l16]
+    outlet_lines = [l21, l30]
+    symplane_lines = [l1]
+
+    wall_surfs = [get_extruded_surf(line) for line in wall_lines]
+    farfield_surfs = [get_extruded_surf(line) for line in farfield_lines]
+    outlet_surfs = [get_extruded_surf(line) for line in outlet_lines]
+    symplane_surfs = [get_extruded_surf(line) for line in symplane_lines]
+
+    for dim, stag in gmsh.model.getEntities(2):
+        s_bb = gmsh.model.getBoundingBox(dim, stag)
+        if abs(s_bb[2] - 0.0) < 1e-5 and abs(s_bb[5] - 0.0) < 1e-5:
+            symplane_surfs.append(stag)
+        elif abs(s_bb[2] - z_extrude) < 1e-5 and abs(s_bb[5] - z_extrude) < 1e-5:
+            symplane_surfs.append(stag)
+
+    wall_group = gmsh.model.addPhysicalGroup(2, wall_surfs)
+    gmsh.model.setPhysicalName(2, wall_group, "wall")
+
+    farfield_group = gmsh.model.addPhysicalGroup(2, farfield_surfs)
+    gmsh.model.setPhysicalName(2, farfield_group, "farfield")
+
+    outlet_group = gmsh.model.addPhysicalGroup(2, outlet_surfs)
+    gmsh.model.setPhysicalName(2, outlet_group, "outlet")
+
+    symplane_group = gmsh.model.addPhysicalGroup(2, symplane_surfs)
+    gmsh.model.setPhysicalName(2, symplane_group, "symplane")
 
     volumes = [ent[1] for ent in extruded_entities if ent[0] == 3]
     fluid = gmsh.model.addPhysicalGroup(3, volumes)

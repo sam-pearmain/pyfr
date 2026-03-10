@@ -15,28 +15,33 @@ def main():
         choices=["coarse", "medium", "fine"],
         default="coarse",
     )
+    parser.add_argument("--write-out", action="store_true")
+    parser.add_argument("--gui", action="store_true")
     parser.add_argument("--filename", type=str, default=None)
-    parser.add_argument("--gui", type=bool, default=False)
 
     args = parser.parse_args()
 
     multipliers = {"coarse": 1, "medium": 2, "fine": 4}
-    multiplier = multipliers[args.mesh_refinement]
+    multiplier = multipliers.get(args.mesh_refinement, 1)
 
     if not args.filename:
         filename = f"{args.mesh_refinement}.msh"
     else:
         filename = args.filename
 
-    genmesh(multiplier, filename, args.gui)
+    genmesh(multiplier, filename, args.write_out, args.gui)
 
 
-def genmesh(multiplier: int, filename: str | None, gui: bool = False):
+def genmesh(
+    multiplier: int, filename: str | None, write_out: bool = False, gui: bool = False
+):
     gmsh.initialize()
     gmsh.model.add("inlet-structured-3d-coarse")
 
     l0 = 150.0
     scale_factor = 1.0 / l0
+    progressions = {1: 1.05, 2: 1.025, 4: 1.01}
+    progression = progressions[multiplier]
 
     domain_length = 1.05
     domain_height = 0.40
@@ -176,8 +181,11 @@ def genmesh(multiplier: int, filename: str | None, gui: bool = False):
     for line in [l12, l16]:
         mesh.setTransfiniteCurve(line, nx_cowl)
 
-    for line in [l17, l18, l19, l20, l21]:
-        mesh.setTransfiniteCurve(line, ny_bottom, "Progression", 1.005)
+    for line in [l17, l18, l19]:
+        mesh.setTransfiniteCurve(line, ny_bottom, "Progression", progression) # fine: 1.01, medium: 1.025, coarse: 1.05
+
+    for line in [l20, l21]:
+        mesh.setTransfiniteCurve(line, ny_bottom, "Bump", 0.2)
 
     for line in [l22, l23, l24, l25]:
         mesh.setTransfiniteCurve(line, ny_mid)
@@ -222,10 +230,18 @@ def genmesh(multiplier: int, filename: str | None, gui: bool = False):
     outlet_lines = [l21, l30]
     symplane_lines = [l1]
 
-    wall_surfs = [get_extruded_surf(line) for line in wall_lines]
-    farfield_surfs = [get_extruded_surf(line) for line in farfield_lines]
-    outlet_surfs = [get_extruded_surf(line) for line in outlet_lines]
-    symplane_surfs = [get_extruded_surf(line) for line in symplane_lines]
+    wall_surfs = [
+        s for s in (get_extruded_surf(line) for line in wall_lines) if s is not None
+    ]
+    farfield_surfs = [
+        s for s in (get_extruded_surf(line) for line in farfield_lines) if s is not None
+    ]
+    outlet_surfs = [
+        s for s in (get_extruded_surf(line) for line in outlet_lines) if s is not None
+    ]
+    symplane_surfs = [
+        s for s in (get_extruded_surf(line) for line in symplane_lines) if s is not None
+    ]
 
     for dim, stag in gmsh.model.getEntities(2):
         s_bb = gmsh.model.getBoundingBox(dim, stag)
@@ -252,7 +268,13 @@ def genmesh(multiplier: int, filename: str | None, gui: bool = False):
 
     gmsh.option.setNumber("Mesh.RecombineAll", 1)
     mesh.generate(3)
-    gmsh.fltk.run()
+
+    if write_out:
+        gmsh.write(filename)
+
+    if gui:
+        gmsh.fltk.run()
+
     gmsh.finalize()
 
 

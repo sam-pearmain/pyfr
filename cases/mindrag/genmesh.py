@@ -63,11 +63,7 @@ def main():
         default=3,
         help="the geometric fineness ratio (length / base diameter)",
     )
-    parser.add_argument(
-        "--filename", 
-        type=str, 
-        help="the mesh filename"
-    )
+    parser.add_argument("--filename", type=str, help="the mesh filename")
 
     args = parser.parse_args()
     radius = _compute_base_radius(parser, args.fineness, LENGTH)
@@ -114,7 +110,7 @@ def main():
         order=args.order,
         mesh_refinement=args.mesh_refinement,
         write_to_disk=True if args.write_out else False,
-        filename=args.filename if args.filename else None, 
+        filename=args.filename if args.filename else None,
         gui=True if args.gui else False,
     )
 
@@ -127,7 +123,7 @@ def genmesh(
     order: int = 1,
     mesh_refinement: str = "coarse",
     write_to_disk: bool = False,
-    filename: str | None = None, 
+    filename: str | None = None,
     gui: bool = False,
 ):
     dof_str = "_".join([f"{d:.1f}" for d in dofs])
@@ -139,7 +135,7 @@ def genmesh(
     model = gmsh.model
 
     multiplier = {"coarse": 1, "medium": 1.5, "fine": 2}[mesh_refinement]
-    progression = 0.1
+    progression = {"coarse": 0.04, "medium": 0.02, "fine": 0.01}[mesh_refinement]
 
     p1 = geom.addPoint(0.0, 0.0, 0.0)
     p2 = geom.addPoint(0.0, dofs[0], 0.0)
@@ -166,15 +162,17 @@ def genmesh(
     s1 = geom.addPlaneSurface([cl1])
 
     geom.mesh.setTransfiniteCurve(
-        c1, int(20 * multiplier + 1), "progression".capitalize(), 1 - progression
+        c1, int(30 * multiplier + 1), "progression".capitalize(), 1 - progression
     )
     geom.mesh.setTransfiniteCurve(
-        c3, int(20 * multiplier + 1), "progression".capitalize(), 1 + progression
+        c3, int(30 * multiplier + 1), "progression".capitalize(), 1 + progression
     )
     geom.mesh.setTransfiniteCurve(
-        c2, int(80 * multiplier + 1), "progression".capitalize(), 1.02
+        c2, int(80 * multiplier + 1), "progression".capitalize(), 1
     )
-    geom.mesh.setTransfiniteCurve(c4, int(80 * multiplier + 1))
+    geom.mesh.setTransfiniteCurve(
+        c4, int(80 * multiplier + 1), "progression".capitalize(), 1
+    )
 
     geom.mesh.setTransfiniteSurface(s1, "left".capitalize(), [p6, p1, p_end, p8])
     geom.mesh.setRecombine(2, s1)
@@ -198,13 +196,17 @@ def genmesh(
     else:
         face = [(2, s1)]
 
-        vols, walls, outflows, farfields = [], [], [], [] 
+        vols, walls, outflows, farfields = [], [], [], []
 
         for i in range(4):
             ext = geom.revolve(
                 face,
-                0.0, 0.0, 0.0,
-                1.0, 0.0, 0.0,
+                0.0,
+                0.0,
+                0.0,
+                1.0,
+                0.0,
+                0.0,
                 math.pi / 2,
                 numElements=[int(12 * multiplier)],
                 recombine=True,
@@ -219,15 +221,16 @@ def genmesh(
         geom.synchronize()
         model.mesh.removeDuplicateNodes()
 
-        model.addPhysicalGroup(3, vols,      1)
-        model.addPhysicalGroup(2, walls,     2)
-        model.addPhysicalGroup(2, outflows,  3)
+        model.addPhysicalGroup(3, vols, 1)
+        model.addPhysicalGroup(2, walls, 2)
+        model.addPhysicalGroup(2, outflows, 3)
         model.addPhysicalGroup(2, farfields, 4)
         model.setPhysicalName(3, 1, "fluid")
         model.setPhysicalName(2, 2, "wall")
         model.setPhysicalName(2, 3, "outflow")
         model.setPhysicalName(2, 4, "farfield")
 
+    model.mesh.optimize("HighOrder", niter=30)
     model.mesh.generate(2 if no_revolve else 3)
 
     if write_to_disk:

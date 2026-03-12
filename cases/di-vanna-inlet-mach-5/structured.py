@@ -257,7 +257,7 @@ def genmesh(
     gmsh.model.setPhysicalName(2, farfield_group, "farfield")
 
     outlet_group = gmsh.model.addPhysicalGroup(2, outlet_surfs)
-    gmsh.model.setPhysicalName(2, outlet_group, "outlet")
+    gmsh.model.setPhysicalName(2, outlet_group, "outflow")
 
     symplane_group = gmsh.model.addPhysicalGroup(2, symplane_surfs)
     gmsh.model.setPhysicalName(2, symplane_group, "symplane")

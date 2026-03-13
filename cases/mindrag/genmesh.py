@@ -259,7 +259,8 @@ def genmesh(
     if order > 1:
         model.mesh.setOrder(order)
 
-    model.mesh.optimize("HighOrder", niter=30)
+    gmsh.option.setNumber("Mesh.HighOrderNumLayers", 3)
+    gmsh.option.setNumber("Mesh.HighOrderOptimize", 1)
 
     if write_to_disk:
         if curve_type == "powerlaw":

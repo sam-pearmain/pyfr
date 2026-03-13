@@ -145,6 +145,8 @@ def genmesh(
     geom = gmsh.model.geo
     model = gmsh.model
 
+    n_spline_points = 200
+
     if curve_type.startswith("bezier"):
         p1 = geom.addPoint(0.0, 0.0, 0.0)
         p2 = geom.addPoint(0.0, dofs[0], 0.0)
@@ -160,18 +162,17 @@ def genmesh(
             c2 = geom.addBezier([p1, p2, p3, p4, p_end])
     else:
         exponent = dofs[0]
-        n_spline_points = 200
         curve_points = []
-        
+
         for i in range(n_spline_points + 1):
             theta = (i / n_spline_points) * (math.pi / 2.0)
             x_val = LENGTH * (1.0 - math.cos(theta))
-            
+
             if x_val == 0.0:
                 y_val = 0.0
             else:
                 y_val = radius * math.pow((x_val / LENGTH), exponent)
-                
+
             pt = geom.addPoint(x_val, y_val, 0.0)
             curve_points.append(pt)
 
@@ -283,7 +284,7 @@ def _write_powerlaw_points(dofs, n_points, radius):
     points = []
     epsilon = 1e-5
     filename = "powerlaw-points.csv"
-    
+
     for i in range(n_points):
         x_val = (i / (n_points - 1)) * LENGTH
         if x_val == 0.0:
@@ -291,18 +292,75 @@ def _write_powerlaw_points(dofs, n_points, radius):
         else:
             y_val = radius * math.pow((x_val / LENGTH), dofs[0]) + epsilon
         points.append((x_val, y_val, 0.0))
-        
-    with open(filename, 'w', newline='') as f:
+
+    with open(filename, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerows(points)
 
 
-def _write_bezier_4_points():
-    pass
+def _write_bezier_4_points(dofs, n_points, radius):
+    points = []
+    epsilon = 1e-5
+    filename = "bezier-points.csv"
+
+    p0_x, p0_y = 0.0, 0.0
+    p1_x, p1_y = 0.0, dofs[0]
+    p2_x, p2_y = dofs[1], dofs[2]
+    p3_x, p3_y = LENGTH, radius
+
+    for i in range(n_points):
+        t = i / (n_points - 1)
+        u = 1.0 - t
+
+        x_val = u**3 * p0_x + 3 * u**2 * t * p1_x + 3 * u * t**2 * p2_x + t**3 * p3_x
+
+        y_val = (
+            u**3 * p0_y + 3 * u**2 * t * p1_y + 3 * u * t**2 * p2_y + t**3 * p3_y
+        ) + epsilon
+
+        points.append((x_val, y_val, 0.0))
+
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(points)
 
 
-def _write_bezier_5_points():
-    pass
+def _write_bezier_5_points(dofs, n_points, radius):
+    points = []
+    epsilon = 1e-5
+    filename = "bezier-points.csv"
+
+    p0_x, p0_y = 0.0, 0.0
+    p1_x, p1_y = 0.0, dofs[0]
+    p2_x, p2_y = dofs[1], dofs[2]
+    p3_x, p3_y = dofs[3], dofs[4]
+    p4_x, p4_y = LENGTH, radius
+
+    for i in range(n_points):
+        t = i / (n_points - 1)
+        u = 1.0 - t
+
+        x_val = (
+            u**4 * p0_x
+            + 4 * u**3 * t * p1_x
+            + 6 * u**2 * t**2 * p2_x
+            + 4 * u * t**3 * p3_x
+            + t**4 * p4_x
+        )
+
+        y_val = (
+            u**4 * p0_y
+            + 4 * u**3 * t * p1_y
+            + 6 * u**2 * t**2 * p2_y
+            + 4 * u * t**3 * p3_y
+            + t**4 * p4_y
+        ) + epsilon
+
+        points.append((x_val, y_val, 0.0))
+
+    with open(filename, "w", newline="") as f:
+        writer = csv.writer(f)
+        writer.writerows(points)
 
 
 def _compute_base_radius(

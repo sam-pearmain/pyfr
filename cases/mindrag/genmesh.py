@@ -1,6 +1,7 @@
 import argparse
 import math
 import random
+import warnings
 
 import gmsh
 
@@ -20,6 +21,12 @@ def main():
         nargs="?",
         default="",
         help="the degrees of freedom at each control point",
+    )
+    parser.add_argument(
+        "--curve-type",
+        choices=["bezier_4", "bezier_5", "powerlaw"],
+        default="bezier_4",
+        help="the type of contour parameterisation to use",
     )
     parser.add_argument(
         "--random",
@@ -42,14 +49,11 @@ def main():
         help="whether to display the gui after mesh generation",
     )
     parser.add_argument(
-        "--points",
+        "--mesh-order",
         type=int,
-        choices=[4, 5],
-        default=5,
-        help="the number of bezier curve control points",
-    )
-    parser.add_argument(
-        "--order", type=int, choices=[1, 2], default=1, help="the mesh element order"
+        choices=[1, 2],
+        default=1,
+        help="the mesh element order",
     )
     parser.add_argument(
         "--mesh-refinement",
@@ -60,7 +64,7 @@ def main():
     parser.add_argument(
         "--fineness",
         type=float,
-        default=3,
+        default=3.0,
         help="the geometric fineness ratio (length / base diameter)",
     )
     parser.add_argument("--filename", type=str, help="the mesh filename")
@@ -68,14 +72,24 @@ def main():
     args = parser.parse_args()
     radius = _compute_base_radius(parser, args.fineness, LENGTH)
 
-    if args.random:
-        if args.points == 4:
+    if args.random and args.dofs:
+        warnings.warn("dofs provided but --random flag also set, please check")
+
+    if not args.dofs:
+        if not args.random:
+            parser.error(
+                "no degrees of freedom specified, pass --random to automatically generate dofs"
+            )
+
+        if args.curve_type == "powerlaw":
+            dofs = [random.uniform(0.65, 0.75)]
+        elif args.curve_type == "bezier_4":
             dofs = [
                 random.uniform(0.01, radius * 0.2),
                 random.uniform(0.1, LENGTH * 0.9),
                 random.uniform(0.05, radius - 0.02),
             ]
-        else:
+        elif args.curve_type == "bezier_5":
             dofs = [
                 random.uniform(0.005, radius * 0.2),
                 random.uniform(0.1, LENGTH * 0.4),
@@ -84,30 +98,26 @@ def main():
                 random.uniform(0.1, radius * 0.9),
             ]
     else:
-        if not args.dofs:
-            parser.error("dofs argument is required unless --random flag is given")
-
         dofs_string_list = args.dofs.split(",")
         dofs = [float(dof) for dof in dofs_string_list]
 
-        if len(dofs) not in [3, 5]:
-            parser.error(
-                "must provide either 3 dofs for a 4-point curve or 5 dofs for a 5-point curve"
-            )
+        n_expected_dofs = {
+            "powerlaw": 1,
+            "bezier_4": 3,
+            "bezier_5": 5,
+        }[args.curve_type]
 
-        if args.points and args.points != (len(dofs) + 5) / 2:
+        if len(dofs) != n_expected_dofs:
             parser.error(
-                "number of provided dofs does not match the number of specified control points"
+                f"number of provided dofs {len(dofs)} does not equal the expected number of dofs for {args.curve_type}: {n_expected_dofs}"
             )
-        else:
-            args.points = 4 if len(dofs) == 3 else 5
 
     genmesh(
         dofs,
         radius,
-        points=args.points,
+        curve_type=args.curve_type,
         no_revolve=args.no_revolve,
-        order=args.order,
+        order=args.mesh_order,
         mesh_refinement=args.mesh_refinement,
         write_to_disk=True if args.write_out else False,
         filename=args.filename if args.filename else None,
@@ -118,7 +128,7 @@ def main():
 def genmesh(
     dofs: list[float],
     radius: float,
-    points: int = 4,
+    curve_type: str = "bezier_4",
     no_revolve: bool = False,
     order: int = 1,
     mesh_refinement: str = "coarse",
@@ -126,29 +136,45 @@ def genmesh(
     filename: str | None = None,
     gui: bool = False,
 ):
-    dof_str = "_".join([f"{d:.1f}" for d in dofs])
-    meshname = f"body_{points}pt_{mesh_refinement}_{dof_str}"
+    dof_str = "_".join([f"{d:.3f}" for d in dofs])
+    meshname = f"body_{curve_type}_{mesh_refinement}_{dof_str}"
 
     gmsh.initialize()
     gmsh.model.add(meshname)
     geom = gmsh.model.geo
     model = gmsh.model
 
-    multiplier = {"coarse": 1, "medium": 1.5, "fine": 2}[mesh_refinement]
-    progression = {"coarse": 0.04, "medium": 0.02, "fine": 0.01}[mesh_refinement]
+    if curve_type.startswith("bezier"):
+        p1 = geom.addPoint(0.0, 0.0, 0.0)
+        p2 = geom.addPoint(0.0, dofs[0], 0.0)
 
-    p1 = geom.addPoint(0.0, 0.0, 0.0)
-    p2 = geom.addPoint(0.0, dofs[0], 0.0)
-
-    if points == 4:
-        p3 = geom.addPoint(dofs[1], dofs[2], 0.0)
-        p_end = geom.addPoint(LENGTH, radius, 0.0)
-        c2 = geom.addBezier([p1, p2, p3, p_end])
+        if curve_type == "bezier_4":
+            p3 = geom.addPoint(dofs[1], dofs[2], 0.0)
+            p_end = geom.addPoint(LENGTH, radius, 0.0)
+            c2 = geom.addBezier([p1, p2, p3, p_end])
+        elif curve_type == "bezier_5":
+            p3 = geom.addPoint(dofs[1], dofs[2], 0.0)
+            p4 = geom.addPoint(dofs[3], dofs[4], 0.0)
+            p_end = geom.addPoint(LENGTH, radius, 0.0)
+            c2 = geom.addBezier([p1, p2, p3, p4, p_end])
     else:
-        p3 = geom.addPoint(dofs[1], dofs[2], 0.0)
-        p4 = geom.addPoint(dofs[3], dofs[4], 0.0)
-        p_end = geom.addPoint(LENGTH, radius, 0.0)
-        c2 = geom.addBezier([p1, p2, p3, p4, p_end])
+        exponent = dofs[0]
+        num_spline_points = 50
+        curve_points = []
+        
+        for i in range(num_spline_points + 1):
+            x_val = (i / num_spline_points) * LENGTH
+            if x_val == 0.0:
+                y_val = 0.0
+            else:
+                y_val = radius * math.pow((x_val / LENGTH), exponent)
+                
+            pt = geom.addPoint(x_val, y_val, 0.0)
+            curve_points.append(pt)
+
+        c2 = geom.addSpline(curve_points)
+        p1 = curve_points[0]
+        p_end = curve_points[-1]
 
     p6 = geom.addPoint(UPSTREAM_OFFSET, 0.0, 0.0)
     p7 = geom.addPoint(UPSTREAM_OFFSET, radius, 0.0)
@@ -161,26 +187,15 @@ def genmesh(
     cl1 = geom.addCurveLoop([c1, c2, c3, c4])
     s1 = geom.addPlaneSurface([cl1])
 
-    geom.mesh.setTransfiniteCurve(
-        c1, int(30 * multiplier + 1), "progression".capitalize(), 1 - progression
-    )
-    geom.mesh.setTransfiniteCurve(
-        c3, int(30 * multiplier + 1), "progression".capitalize(), 1 + progression
-    )
-    geom.mesh.setTransfiniteCurve(
-        c2, int(80 * multiplier + 1), "progression".capitalize(), 1
-    )
-    geom.mesh.setTransfiniteCurve(
-        c4, int(80 * multiplier + 1), "progression".capitalize(), 1
-    )
+    geom.mesh.setTransfiniteCurve(c1, 31, "Progression", 1 - 0.04)
+    geom.mesh.setTransfiniteCurve(c3, 31, "Progression", 1 + 0.04)
+    geom.mesh.setTransfiniteCurve(c2, 81, "Progression", 1)
+    geom.mesh.setTransfiniteCurve(c4, 81, "Progression", 1)
 
-    geom.mesh.setTransfiniteSurface(s1, "left".capitalize(), [p6, p1, p_end, p8])
+    geom.mesh.setTransfiniteSurface(s1, "Left", [p6, p1, p_end, p8])
     geom.mesh.setRecombine(2, s1)
 
     geom.synchronize()
-
-    if order > 1:
-        model.mesh.setOrder(order)
 
     if no_revolve:
         model.addPhysicalGroup(2, [s1], 1)
@@ -195,7 +210,6 @@ def genmesh(
         model.setPhysicalName(1, 5, "farfield")
     else:
         face = [(2, s1)]
-
         vols, walls, outflows, farfields = [], [], [], []
 
         for i in range(4):
@@ -208,7 +222,7 @@ def genmesh(
                 0.0,
                 0.0,
                 math.pi / 2,
-                numElements=[int(12 * multiplier)],
+                numElements=[12],
                 recombine=True,
             )
             vols.append(ext[1][1])
@@ -230,8 +244,18 @@ def genmesh(
         model.setPhysicalName(2, 3, "outflow")
         model.setPhysicalName(2, 4, "farfield")
 
-    model.mesh.optimize("HighOrder", niter=30)
     model.mesh.generate(2 if no_revolve else 3)
+
+    if mesh_refinement == "medium":
+        model.mesh.refine()
+    elif mesh_refinement == "fine":
+        model.mesh.refine()
+        model.mesh.refine()
+
+    if order > 1:
+        model.mesh.setOrder(order)
+
+    model.mesh.optimize("HighOrder", niter=30)
 
     if write_to_disk:
         if filename:

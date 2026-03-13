@@ -52,7 +52,7 @@ def main():
         "--mesh-order",
         type=int,
         choices=[1, 2],
-        default=1,
+        default=2,
         help="the mesh element order",
     )
     parser.add_argument(
@@ -159,11 +159,13 @@ def genmesh(
             c2 = geom.addBezier([p1, p2, p3, p4, p_end])
     else:
         exponent = dofs[0]
-        num_spline_points = 50
+        num_spline_points = 200
         curve_points = []
         
         for i in range(num_spline_points + 1):
-            x_val = (i / num_spline_points) * LENGTH
+            theta = (i / num_spline_points) * (math.pi / 2.0)
+            x_val = LENGTH * (1.0 - math.cos(theta))
+            
             if x_val == 0.0:
                 y_val = 0.0
             else:

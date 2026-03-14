@@ -226,7 +226,7 @@ def genmesh(
                 0.0, 0.0, 0.0,
                 1.0, 0.0, 0.0,
                 math.pi / 2,
-                numElements=[6],
+                numElements=[8 * multiplier],
                 recombine=True,
             )  # fmt: skip
             vols.append(ext[1][1])

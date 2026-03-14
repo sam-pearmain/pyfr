@@ -191,10 +191,10 @@ def genmesh(
     cl1 = geom.addCurveLoop([c1, c2, c3, c4])
     s1 = geom.addPlaneSurface([cl1])
 
-    geom.mesh.setTransfiniteCurve(c1, 31, "Progression", 1 - 0.04)
-    geom.mesh.setTransfiniteCurve(c3, 31, "Progression", 1 + 0.04)
-    geom.mesh.setTransfiniteCurve(c2, 81, "Progression", 1)
-    geom.mesh.setTransfiniteCurve(c4, 81, "Progression", 1)
+    geom.mesh.setTransfiniteCurve(c1, 21, "Progression", 1 - 0.06)
+    geom.mesh.setTransfiniteCurve(c3, 21, "Progression", 1 + 0.06)
+    geom.mesh.setTransfiniteCurve(c2, 41, "Progression", 1)
+    geom.mesh.setTransfiniteCurve(c4, 41, "Progression", 1)
 
     geom.mesh.setTransfiniteSurface(s1, "Left", [p6, p1, p_end, p8])
     geom.mesh.setRecombine(2, s1)
@@ -219,16 +219,12 @@ def genmesh(
         for i in range(4):
             ext = geom.revolve(
                 face,
-                0.0,
-                0.0,
-                0.0,
-                1.0,
-                0.0,
-                0.0,
+                0.0, 0.0, 0.0,
+                1.0, 0.0, 0.0,
                 math.pi / 2,
-                numElements=[12],
+                numElements=[6],
                 recombine=True,
-            )
+            )  # fmt: skip
             vols.append(ext[1][1])
             walls.append(ext[2][1])
             outflows.append(ext[3][1])
@@ -259,7 +255,7 @@ def genmesh(
     if order > 1:
         model.mesh.setOrder(order)
 
-    gmsh.option.setNumber("Mesh.HighOrderNumLayers", 3)
+    gmsh.option.setNumber("Mesh.HighOrderNumLayers", 4)
     gmsh.option.setNumber("Mesh.HighOrderOptimize", 1)
 
     if write_to_disk:

@@ -145,6 +145,10 @@ def genmesh(
     geom = gmsh.model.geo
     model = gmsh.model
 
+    multiplier = {"coarse": 1, "medium": 2, "fine": 4}[mesh_refinement]
+    base = 1.06
+    progression = math.pow(base, 1.0 / multiplier)
+    inv_progression = math.pow(1.0 / base, 1.0 / multiplier)
     n_spline_points = 200
 
     if curve_type.startswith("bezier"):
@@ -191,10 +195,10 @@ def genmesh(
     cl1 = geom.addCurveLoop([c1, c2, c3, c4])
     s1 = geom.addPlaneSurface([cl1])
 
-    geom.mesh.setTransfiniteCurve(c1, 21, "Progression", 1 - 0.06)
-    geom.mesh.setTransfiniteCurve(c3, 21, "Progression", 1 + 0.06)
-    geom.mesh.setTransfiniteCurve(c2, 41, "Progression", 1)
-    geom.mesh.setTransfiniteCurve(c4, 41, "Progression", 1)
+    geom.mesh.setTransfiniteCurve(c1, 20 * multiplier + 1, "Progression", inv_progression)
+    geom.mesh.setTransfiniteCurve(c3, 20 * multiplier + 1, "Progression", progression)
+    geom.mesh.setTransfiniteCurve(c2, 40 * multiplier + 1, "Progression", 1)
+    geom.mesh.setTransfiniteCurve(c4, 40 * multiplier + 1, "Progression", 1)
 
     geom.mesh.setTransfiniteSurface(s1, "Left", [p6, p1, p_end, p8])
     geom.mesh.setRecombine(2, s1)
@@ -246,20 +250,14 @@ def genmesh(
 
     model.mesh.generate(2 if no_revolve else 3)
 
-    if mesh_refinement == "medium":
-        model.mesh.refine()
-    elif mesh_refinement == "fine":
-        model.mesh.refine()
-        model.mesh.refine()
-
     if order > 1:
         model.mesh.setOrder(order)
         gmsh.option.setNumber("Mesh.HighOrderOptimize", 2)
-        gmsh.option.setNumber("Mesh.HighOrderNumLayers", 6)
+        gmsh.option.setNumber("Mesh.HighOrderNumLayers", 12)
         gmsh.option.setNumber("Mesh.HighOrderPassMax", 50)
-        gmsh.option.setNumber("Mesh.HighOrderThresholdMin", 0.1)
+        gmsh.option.setNumber("Mesh.HighOrderThresholdMin", 0.01)
         gmsh.option.setNumber("Mesh.HighOrderThresholdMax", 2.0)
-        model.mesh.optimize("HighOrder", niter=50)
+        model.mesh.optimize("HighOrder", niter=100)
 
     if write_to_disk:
         if curve_type == "powerlaw":

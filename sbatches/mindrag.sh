@@ -1,32 +1,35 @@
 #!/bin/bash
 #SBATCH --job-name=pyfr-mindrag
 #SBATCH --partition=interruptible_gpu
-#SBATCH --ntasks=6
-#SBATCH --cpus-per-task=8
+#SBATCH --ntasks=2
+#SBATCH --cpus-per-task=16
 #SBATCH --mem=128G
-#SBATCH --gres=gpu:6
-#SBATCH --time=24:00:00
+#SBATCH --gres=gpu:2
+#SBATCH --time=12:00:00
 #SBATCH --output=pyfr-mindrag-%j.log
 #SBATCH --error=pyfr-mindrag-%j.err
-#SBATCH --constraint=l40s
+#SBATCH --constraint=h100
 
 RUN_DIR="/scratch/users/k24108571/mindrag-mesh-sens"
-N=6
+N=2
 
 cd "${HOME}/pyfr"
 source .venv/bin/activate
 source initenv.sh
 
-cd "${RUN_DIR}/fine"
+for CASE_DIR in "${RUN_DIR}"/*/
+do
+    cd "${CASE_DIR}"
 
-rm -rf /out 
-rm forces.csv
-mkdir out
+    rm -rf out 
+    rm -f forces.csv
+    mkdir out
 
-MESH=$(ls *.pyfrm | head -n 1)
-INI=$(ls *.ini | head -n 1)
+    MESH=$(ls *.pyfrm | head -n 1)
+    INI=$(ls *.ini | head -n 1)
 
-pyfr partition "${N}" -p scotch -e pri:1 -e hex:1 "${MESH}" .
+    pyfr partition add -f -p scotch -e pri:1 -e hex:1 "${MESH}" "${N}"
 
-echo "starting pyfr"
-mpiexec -n "${N}" pyfr run -b cuda "${MESH}" "${INI}"
+    echo "starting pyfr in ${CASE_DIR}"
+    mpiexec -n "${N}" pyfr run -b cuda "${MESH}" "${INI}"
+done

@@ -9,39 +9,21 @@ mesh = gmsh.model.mesh
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--mesh-refinement",
-        type=str,
-        choices=["coarse", "medium", "fine"],
-        default="coarse",
-    )
     parser.add_argument("--write-out", action="store_true")
     parser.add_argument("--gui", action="store_true")
-    parser.add_argument("--filename", type=str, default=None)
+    parser.add_argument("--filename", type=str, default="mesh.msh")
 
     args = parser.parse_args()
 
-    multipliers = {"coarse": 1, "medium": 2, "fine": 4}
-    multiplier = multipliers.get(args.mesh_refinement, 1)
-
-    if not args.filename:
-        filename = f"{args.mesh_refinement}.msh"
-    else:
-        filename = args.filename
-
-    genmesh(multiplier, filename, args.write_out, args.gui)
+    genmesh(args.filename, args.write_out, args.gui)
 
 
-def genmesh(
-    multiplier: int, filename: str | None, write_out: bool = False, gui: bool = False
-):
+def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     gmsh.initialize()
-    gmsh.model.add("inlet-structured-3d-coarse")
+    gmsh.model.add("inlet-structured-3d")
 
     l0 = 150.0
     scale_factor = 1.0 / l0
-    progressions = {1: 1.05, 2: 1.025, 4: 1.01}
-    progression = progressions[multiplier]
 
     domain_length = 1.05
     domain_height = 0.40
@@ -86,10 +68,10 @@ def genmesh(
     nx_wake = int(round((x_end - x_cowl_tip) / dx_constant))
     nx_throat = nx_cowl + nx_wake - 1
 
-    ny_bottom = 45 * multiplier
-    ny_mid = 4 * multiplier
-    ny_top = 30 * multiplier
-    nz_total = 20 * multiplier
+    ny_bottom = 94
+    ny_mid = 2
+    ny_top = 29
+    nz_total = 20
 
     p1 = geom.addPoint(x_start, 0, 0)
     p2 = geom.addPoint(x_ramp_start, 0, 0)
@@ -182,7 +164,7 @@ def genmesh(
         mesh.setTransfiniteCurve(line, nx_cowl)
 
     for line in [l17, l18, l19]:
-        mesh.setTransfiniteCurve(line, ny_bottom, "Progression", progression) # fine: 1.01, medium: 1.025, coarse: 1.05
+        mesh.setTransfiniteCurve(line, ny_bottom, "Progression", 1.01)
 
     for line in [l20, l21]:
         mesh.setTransfiniteCurve(line, ny_bottom, "Bump", 0.2)

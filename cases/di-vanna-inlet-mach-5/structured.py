@@ -207,11 +207,15 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
                 return stag
         return None
 
-    wall_lines = [l2, l3, l4, l8, l25, l12]
-    farfield_lines = [l17, l22, l26, l13, l14, l15, l16]
-    outlet_lines = [l21, l30]
+    bottom_wall_lines = [l2, l3, l4]
+    wall_lines = [l8, l25, l12]
+    farfield_lines = [l17, l22, l26, l13, l14, l15, l16, l30]
+    outlet_lines = [l21]
     symplane_lines = [l1]
 
+    bottom_wall_surfs = [
+        s for s in (get_extruded_surf(line) for line in bottom_wall_lines) if s is not None
+    ]
     wall_surfs = [
         s for s in (get_extruded_surf(line) for line in wall_lines) if s is not None
     ]
@@ -231,6 +235,9 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
             symplane_surfs.append(stag)
         elif abs(s_bb[2] - z_extrude) < 1e-5 and abs(s_bb[5] - z_extrude) < 1e-5:
             symplane_surfs.append(stag)
+
+    bottom_wall_group = gmsh.model.addPhysicalGroup(2, bottom_wall_surfs)
+    gmsh.model.setPhysicalName(2, bottom_wall_group, "bottom-wall")
 
     wall_group = gmsh.model.addPhysicalGroup(2, wall_surfs)
     gmsh.model.setPhysicalName(2, wall_group, "wall")

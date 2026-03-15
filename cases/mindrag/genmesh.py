@@ -257,7 +257,7 @@ def genmesh(
         gmsh.option.setNumber("Mesh.HighOrderPassMax", 50)
         gmsh.option.setNumber("Mesh.HighOrderThresholdMin", 0.01)
         gmsh.option.setNumber("Mesh.HighOrderThresholdMax", 2.0)
-        model.mesh.optimize("HighOrder", niter=100)
+        model.mesh.optimize("HighOrder", niter=50)
 
     if write_to_disk:
         if curve_type == "powerlaw":

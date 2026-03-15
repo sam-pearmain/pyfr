@@ -44,7 +44,7 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     kink_height = tan(radians(ramp_angle_one)) * kink_length
 
     y_split_bot = ramp_height + throat_height
-    blunt_height = 1.0 * scale_factor
+    blunt_height = 0.1 * scale_factor
     y_split_top = y_split_bot + blunt_height
 
     x_start = 0.0

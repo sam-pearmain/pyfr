@@ -68,9 +68,9 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     nx_wake = int(round((x_end - x_cowl_tip) / dx_constant))
     nx_throat = nx_cowl + nx_wake - 1
 
-    ny_bottom = 94
-    ny_mid = 2
-    ny_top = 29
+    ny_bottom = 90
+    ny_mid = 5
+    ny_top = 33
     nz_total = 20
 
     p1 = geom.addPoint(x_start, 0, 0)

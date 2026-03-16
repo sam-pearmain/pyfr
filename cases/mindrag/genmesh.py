@@ -1,5 +1,4 @@
 import argparse
-import csv
 import math
 import random
 import warnings
@@ -195,7 +194,9 @@ def genmesh(
     cl1 = geom.addCurveLoop([c1, c2, c3, c4])
     s1 = geom.addPlaneSurface([cl1])
 
-    geom.mesh.setTransfiniteCurve(c1, 20 * multiplier + 1, "Progression", inv_progression)
+    geom.mesh.setTransfiniteCurve(
+        c1, 20 * multiplier + 1, "Progression", inv_progression
+    )
     geom.mesh.setTransfiniteCurve(c3, 20 * multiplier + 1, "Progression", progression)
     geom.mesh.setTransfiniteCurve(c2, 40 * multiplier + 1, "Progression", 1)
     geom.mesh.setTransfiniteCurve(c4, 40 * multiplier + 1, "Progression", 1)

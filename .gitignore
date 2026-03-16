@@ -12,6 +12,11 @@
 # mesh files
 *.msh
 
+# optimiser stuff
+*.json
+*.npy
+/cases/mindrag/mindrag-optimisation
+
 # slurm stuff
 *.log
 *.err

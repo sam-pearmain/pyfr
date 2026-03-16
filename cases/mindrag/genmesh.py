@@ -260,13 +260,6 @@ def genmesh(
         model.mesh.optimize("HighOrder", niter=50)
 
     if write_to_disk:
-        if curve_type == "powerlaw":
-            _write_powerlaw_points(dofs, n_spline_points, radius)
-        elif curve_type == "bezier_4":
-            _write_bezier_4_points(dofs, n_spline_points, radius)
-        else:
-            _write_bezier_5_points(dofs, n_spline_points, radius)
-
         if filename:
             gmsh.write(f"{filename}")
         else:
@@ -276,89 +269,6 @@ def genmesh(
         gmsh.fltk.run()
 
     gmsh.finalize()
-
-
-def _write_powerlaw_points(dofs, n_points, radius):
-    points = []
-    epsilon = 1e-5
-    filename = "powerlaw-points.csv"
-
-    for i in range(n_points):
-        x_val = (i / (n_points - 1)) * LENGTH
-        if x_val == 0.0:
-            y_val = epsilon
-        else:
-            y_val = radius * math.pow((x_val / LENGTH), dofs[0]) + epsilon
-        points.append((x_val, y_val, 0.0))
-
-    with open(filename, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(points)
-
-
-def _write_bezier_4_points(dofs, n_points, radius):
-    points = []
-    epsilon = 1e-5
-    filename = "bezier-points.csv"
-
-    p0_x, p0_y = 0.0, 0.0
-    p1_x, p1_y = 0.0, dofs[0]
-    p2_x, p2_y = dofs[1], dofs[2]
-    p3_x, p3_y = LENGTH, radius
-
-    for i in range(n_points):
-        t = i / (n_points - 1)
-        u = 1.0 - t
-
-        x_val = u**3 * p0_x + 3 * u**2 * t * p1_x + 3 * u * t**2 * p2_x + t**3 * p3_x
-
-        y_val = (
-            u**3 * p0_y + 3 * u**2 * t * p1_y + 3 * u * t**2 * p2_y + t**3 * p3_y
-        ) + epsilon
-
-        points.append((x_val, y_val, 0.0))
-
-    with open(filename, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(points)
-
-
-def _write_bezier_5_points(dofs, n_points, radius):
-    points = []
-    epsilon = 1e-5
-    filename = "bezier-points.csv"
-
-    p0_x, p0_y = 0.0, 0.0
-    p1_x, p1_y = 0.0, dofs[0]
-    p2_x, p2_y = dofs[1], dofs[2]
-    p3_x, p3_y = dofs[3], dofs[4]
-    p4_x, p4_y = LENGTH, radius
-
-    for i in range(n_points):
-        t = i / (n_points - 1)
-        u = 1.0 - t
-
-        x_val = (
-            u**4 * p0_x
-            + 4 * u**3 * t * p1_x
-            + 6 * u**2 * t**2 * p2_x
-            + 4 * u * t**3 * p3_x
-            + t**4 * p4_x
-        )
-
-        y_val = (
-            u**4 * p0_y
-            + 4 * u**3 * t * p1_y
-            + 6 * u**2 * t**2 * p2_y
-            + 4 * u * t**3 * p3_y
-            + t**4 * p4_y
-        ) + epsilon
-
-        points.append((x_val, y_val, 0.0))
-
-    with open(filename, "w", newline="") as f:
-        writer = csv.writer(f)
-        writer.writerows(points)
 
 
 def _compute_base_radius(

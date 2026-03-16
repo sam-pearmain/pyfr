@@ -1,11 +1,9 @@
 import argparse
 from math import radians, tan
-
 import gmsh
 
 geom = gmsh.model.geo
 mesh = gmsh.model.mesh
-
 
 def main():
     parser = argparse.ArgumentParser()
@@ -16,7 +14,6 @@ def main():
     args = parser.parse_args()
 
     genmesh(args.filename, args.write_out, args.gui)
-
 
 def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     gmsh.initialize()
@@ -69,8 +66,8 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     nx_throat = nx_cowl + nx_wake - 1
 
     ny_bottom = 90
-    ny_mid = 3
-    ny_top = 35
+    ny_mid = 2
+    ny_top = 36
     nz_total = 20
 
     p1 = geom.addPoint(x_start, 0, 0)
@@ -163,17 +160,14 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     for line in [l12, l16]:
         mesh.setTransfiniteCurve(line, nx_cowl)
 
-    for line in [l17, l18, l19]:
-        mesh.setTransfiniteCurve(line, ny_bottom, "Progression", 1.01)
-
-    for line in [l20, l21]:
-        mesh.setTransfiniteCurve(line, ny_bottom, "Bump", 0.2)
+    for line in [l17, l18, l19, l20, l21]:
+        mesh.setTransfiniteCurve(line, ny_bottom)
 
     for line in [l22, l23, l24, l25]:
         mesh.setTransfiniteCurve(line, ny_mid)
 
     for line in [l26, l27, l28, l29, l30]:
-        mesh.setTransfiniteCurve(line, ny_top, "Progression", 1.01)
+        mesh.setTransfiniteCurve(line, ny_top)
 
     mesh.setTransfiniteSurface(s1, cornerTags=[p1, p2, p7, p6])
     mesh.setTransfiniteSurface(s2, cornerTags=[p2, p3, p8, p7])
@@ -265,7 +259,6 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
         gmsh.fltk.run()
 
     gmsh.finalize()
-
 
 if __name__ == "__main__":
     main()

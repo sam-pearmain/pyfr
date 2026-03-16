@@ -250,6 +250,7 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     gmsh.model.setPhysicalName(3, fluid, "fluid")
 
     gmsh.option.setNumber("Mesh.RecombineAll", 1)
+    gmsh.option.setNumber("Mesh.MshFileVersion", 2.2)
     mesh.generate(3)
 
     if write_out:

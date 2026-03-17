@@ -41,7 +41,7 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     kink_height = tan(radians(ramp_angle_one)) * kink_length
 
     y_split_bot = ramp_height + throat_height
-    blunt_height = 0.1 * scale_factor
+    blunt_height = (0.15 / 24.7) * l0 * scale_factor
     y_split_top = y_split_bot + blunt_height
 
     x_start = 0.0
@@ -66,8 +66,8 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
     nx_throat = nx_cowl + nx_wake - 1
 
     ny_bottom = 90
-    ny_mid = 2
-    ny_top = 36
+    ny_mid = 7
+    ny_top = 32
     nz_total = 20
 
     p1 = geom.addPoint(x_start, 0, 0)
@@ -159,15 +159,14 @@ def genmesh(filename: str, write_out: bool = False, gui: bool = False):
         mesh.setTransfiniteCurve(line, nx_throat)
     for line in [l12, l16]:
         mesh.setTransfiniteCurve(line, nx_cowl)
-
-    for line in [l17, l18, l19, l20, l21]:
-        mesh.setTransfiniteCurve(line, ny_bottom)
-
+    for line in [l17, l18, l19]:
+        mesh.setTransfiniteCurve(line, ny_bottom, "progression".capitalize(), 1.02)
+    for line in [l20, l21]:
+        mesh.setTransfiniteCurve(line, ny_bottom, "bump".capitalize(), 0.6)
     for line in [l22, l23, l24, l25]:
         mesh.setTransfiniteCurve(line, ny_mid)
-
     for line in [l26, l27, l28, l29, l30]:
-        mesh.setTransfiniteCurve(line, ny_top)
+        mesh.setTransfiniteCurve(line, ny_top, "progression".capitalize(), 1.1)
 
     mesh.setTransfiniteSurface(s1, cornerTags=[p1, p2, p7, p6])
     mesh.setTransfiniteSurface(s2, cornerTags=[p2, p3, p8, p7])

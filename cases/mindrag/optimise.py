@@ -108,7 +108,10 @@ class SimulationManager:
     def _pyfr_partition_mesh(self):
         if CONFIG.n_gpus > 1:
             subprocess.run(
-                ["pyfr", "partition", str(CONFIG.n_gpus), "mesh.pyfrm", "."],
+                [
+                    "pyfr", "partition", "add", "-f", "-p", "scotch", 
+                    "-e", "pri:1", "-e", "hex:1", "mesh.pyfrm", str(CONFIG.n_gpus)
+                ],
                 cwd=self.rundir,
                 check=True
             )

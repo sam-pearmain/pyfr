@@ -214,7 +214,6 @@ def main():
         n_doe = 15
 
     initial_doe = egx.lhs(bounds, n_doe, seed=42)
-    print(initial_doe)
 
     egor = egx.Egor(
         bounds,

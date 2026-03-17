@@ -11,7 +11,9 @@ os.environ["EGOR_USE_RUN_RECORDER"] = "WITH_ITER_STATE"
 
 
 class EnvConfig:
-    def __init__(self, env_type: str):
+    def __init__(self, env_type: str, n_gpus: int = 1):
+        self.n_gpus = n_gpus
+        
         if env_type == "hpc":
             self.scratch_dir = "/scratch/users/k24108571/"
             self.home_dir = "/users/k24108571/"
@@ -92,7 +94,7 @@ class SimulationManager:
             ],
             cwd=self.rundir,
             check=True,
-            stdout=subprocess.DEVNULL, 
+            stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL
         )
 
@@ -104,19 +106,29 @@ class SimulationManager:
         )
 
     def _pyfr_partition_mesh(self):
-        pass
+        if CONFIG.n_gpus > 1:
+            subprocess.run(
+                ["pyfr", "partition", str(CONFIG.n_gpus), "mesh.pyfrm", "."],
+                cwd=self.rundir,
+                check=True
+            )
 
     def _pyfr_run(self):
+        cmd = [
+            "pyfr",
+            "-p",
+            "run",
+            "-b",
+            "cuda",
+            "mesh.pyfrm",
+            "case.ini",
+        ]
+        
+        if CONFIG.n_gpus > 1:
+            cmd = ["mpiexec", "-n", str(CONFIG.n_gpus)] + cmd
+
         subprocess.run(
-            [
-                "pyfr",
-                "-p",
-                "run",
-                "-b",
-                "cuda",
-                "mesh.pyfrm",
-                "case.ini",
-            ],
+            cmd,
             cwd=self.rundir,
             check=True,
         )
@@ -175,10 +187,15 @@ def main():
         choices=["powerlaw", "bezier_4"],
         default=None,
     )
+    parser.add_argument(
+        "--gpus",
+        type=int,
+        default=1,
+    )
     args = parser.parse_args()
 
     global CONFIG
-    CONFIG = EnvConfig(args.env)
+    CONFIG = EnvConfig(args.env, args.gpus)
 
     shape = args.shape if args.shape else CONFIG.default_shape
 
@@ -193,27 +210,25 @@ def main():
         bounds = [[0.1, 0.9]]
         n_doe = 5
     else:
-        bounds = [[0.01, radius * 0.2], [0.1, length * 0.9], [0.05, radius - 0.02]]
+        bounds = [[0.01, radius * 0.2], [0.2, length * 0.8], [0.05, radius - 0.02]]
         n_doe = 15
 
     initial_doe = egx.lhs(bounds, n_doe, seed=42)
     print(initial_doe)
 
-    return 
+    egor = egx.Egor(
+        bounds,
+        doe=initial_doe,
+        trego=True,
+        failsafe_strategy=egx.FailsafeStrategy.IMPUTATION,
+        outdir=CONFIG.working_dir,
+        seed=42,
+    )
 
-    # egor = egx.Egor(
-    #     bounds,
-    #     doe=initial_doe,
-    #     trego=True,
-    #     failsafe_strategy=egx.FailsafeStrategy.IMPUTATION,
-    #     outdir=CONFIG.working_dir,
-    #     seed=42,
-    # )
+    res = egor.minimize(evaluate_hypersonic_drag, max_iters=25)
 
-    # res = egor.minimize(evaluate_hypersonic_drag, max_iters=25)
-
-    # print(f"optimisation complete. minimum drag: {res.y_opt[0]}")
-    # print(f"optimal parameters: {res.x_opt}")
+    print(f"optimisation complete. minimum drag: {res.y_opt[0]}")
+    print(f"optimal parameters: {res.x_opt}")
 
 
 if __name__ == "__main__":

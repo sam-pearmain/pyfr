@@ -224,7 +224,7 @@ def main():
         seed=42,
     )
 
-    res = egor.minimize(evaluate_hypersonic_drag, max_iters=25)
+    res = egor.minimize(evaluate_hypersonic_drag, max_iters=30)
 
     print(f"optimisation complete. minimum drag: {res.y_opt[0]}")
     print(f"optimal parameters: {res.x_opt}")
